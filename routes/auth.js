@@ -1,20 +1,29 @@
-const router = require('express').Router();
+import { MariaDB } from '../model'
+import { isValid } from '../asset/utils'
 
-router.get('/signup', (req, res) => {
-    res.send('this is sign-up page');
-});
+const router = require('express').Router()
+const mariaDB = new MariaDB()
 
-router.get('/login', (req, res) => {
-    res.send('this is login page');
-});
+router.post('/', (req, res) => {
+    const email = req.query.email
+    const password = req.query.password
 
-router.get('/logout', (req, res) => {
-    res.send('this is logout page');
-});
+    if (!isValid(email) || !isValid(password)) {
+        res.send('Please enter your email and password correctly')
+    } else {
+        mariaDB.findUserSync(email, password).then(objUser => {
+            if (!objUser) {
+                res.send('Wrong email or password. please check again')
+                return
+            }
 
-router.get('/delete', (req, res) => {
-    res.send('this is delete page');
-});
+            res.send(`로그인 페이지에 오신것을 환영 합니다.: ${JSON.stringify(objUser)} `)
+        })
+    }
+})
+
+router.get('/', (req, res) => {
+    res.send(`This is the logout page.`)
+})
 
 module.exports = router;
-
