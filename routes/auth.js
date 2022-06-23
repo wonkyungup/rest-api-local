@@ -17,7 +17,7 @@ router.post('/', (req, res) => {
                 return
             }
 
-            res.send(`로그인 페이지에 오신것을 환영 합니다.: ${JSON.stringify(objUser)} `)
+            res.send(`Welcome to the login page: ${JSON.stringify(objUser)}`)
         })
     }
 })
