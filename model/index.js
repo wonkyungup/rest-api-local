@@ -1,44 +1,122 @@
-const mysql = require('mysql');
+const mysql = require('mysql')
+const STR_DATABASE = 'db_test'
+const STR_TABLE = 'members'
 
 export class MariaDB {
     constructor() {
-        this._conn = mysql.createPool({
+        this._pool = mysql.createPool({
             host: process.env.DB_HOST,
             port: process.env.DB_PORT,
             user: process.env.DB_USER,
             password: process.env.DB_PASSWORD,
-            database: 'portx'
+            database: STR_DATABASE
         })
     }
 
     static initializeDataBase () {
-        const conn = mysql.createPool({
-            host: process.env.DB_HOST,
-            port: process.env.DB_PORT,
-            user: process.env.DB_USER,
-            password: process.env.DB_PASSWORD
-        })
-
-        if (conn) {
-            conn.query('CREATE DATABASE IF NOT EXISTS portx', (err) => {
-                if (err) {
-                    console.log('Create Database Error');
-                }
+        return new Promise(resolve => {
+            this._pool = mysql.createPool({
+                host: process.env.DB_HOST,
+                port: process.env.DB_PORT,
+                user: process.env.DB_USER,
+                password: process.env.DB_PASSWORD
             })
-        }
+
+            this._pool.query(`CREATE DATABASE IF NOT EXISTS ${STR_DATABASE}`, (err) => {
+                if (err) {
+                    console.log(`initializeDataBase: ${err}`)
+                    return
+                }
+
+                if (this._pool) {
+                    this._pool.end()
+                }
+
+                this._pool = null
+                resolve()
+            })
+        })
     }
 
-    initializeTable () {
-        const _conn = this._conn
+    initializeDatabaseTable () {
+        this._pool.query(`CREATE TABLE IF NOT EXISTS ${STR_TABLE} (ID INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY, EMAIL VARCHAR(255) NOT NULL, PASSWORD VARCHAR(255) NOT NULL, DATE DATE NOT NULL)`, (err) => {
+            if (err) {
+                console.log(`initializeDatabaseTable: ${err}`)
+                return
+            }
+        })
+    }
 
-        if (_conn) {
-            _conn.query('CREATE TABLE IF NOT EXISTS members (name VARCHAR(255), address VARCHAR(255));', (err) => {
+    getAllDataSync () {
+        return new Promise(resolve => {
+            this._pool.query(`select * from ${STR_TABLE}`, (err, rows) => {
                 if (err) {
-                    console.log('Create Table Error');
-                    console.log(err)
+                    console.log(`getAllDataSync: ${err}`)
+                    return
                 }
+                resolve(rows)
             })
-            // await _conn.query('CREATE TABLE IF NOT EXISTS member (ID INT NOT NULL AUTO_INCREMENT, EMAIL VARCHAR(255) NOT NULL, PASSWORD VARCHAR(255) NOT NULL, DATE DATE NOT NULL)');
-        }
+        })
+    }
+
+    existUserSync (email) {
+        return new Promise(resolve => {
+            this._pool.query(`select email from ${STR_TABLE} where email=${JSON.stringify(email)}`, (err, row) => {
+                if (err) {
+                    console.log(`existUserSync: ${err}`)
+                    return
+                }
+
+                if (row.length > 0) {
+                    resolve(true)
+                }
+
+                resolve(false)
+            })
+        })
+    }
+
+    addUser (email, password) {
+        this._pool.query(`insert into ${STR_TABLE} (email, password, date) values (${JSON.stringify(email)}, ${JSON.stringify(password)}, now())`, (err) => {
+            if (err) {
+                console.log(`addUser: ${err}`)
+                return
+            }
+        })
+    }
+
+    findUserSync (email, password) {
+        return new Promise(resolve => {
+            this._pool.query(`select * from ${STR_TABLE} where email=${JSON.stringify(email)} AND password=${JSON.stringify(password)}`, (err, rows) => {
+              if (err) {
+                  console.log(`findUserSync: ${err}`)
+              }
+
+              if (rows.length > 0) {
+                  resolve(rows[0])
+              }
+              resolve(null)
+            })
+        })
+    }
+
+    deleteUserSync (email, password) {
+        return new Promise(resolve => {
+            this._pool.query(`select * from ${STR_TABLE} where email=${JSON.stringify(email)} AND password=${JSON.stringify(password)}`, (err, rows) => {
+                if (err) {
+                    console.log(`findUserSync: ${err}`)
+                    return
+                }
+
+                this._pool.query(`delete from ${STR_TABLE} where id = ${rows[0].ID}`, (err) => {
+                    if (err) {
+                        console.log(`deleteUserSync: ${err}`)
+                        return
+                    }
+
+                    resolve()
+                })
+            })
+        })
     }
 }
