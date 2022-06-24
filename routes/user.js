@@ -5,7 +5,6 @@ const router = require('express').Router()
 const mariaDB = new MariaDB()
 
 router.get('/', (req, res) => {
-    console.log(res.status())
     mariaDB.getAllDataSync().then((items) => {
         let result = '<table>'
 
@@ -25,8 +24,15 @@ router.delete('/', (req, res) => {
     if (!isValid(email) || !isValid(password)) {
         res.send('Please enter your email and password correctly')
     } else {
-        mariaDB.deleteUserSync(email, password).then(() => {
-            res.send(`The account (${email}) has been deleted.`)
+        mariaDB.findUserSync(email, password).then(objUser => {
+            if (!objUser) {
+                res.send('There is no mail subscription history.')
+                return
+            }
+
+            mariaDB.deleteUserSync(objUser.ID).then(() => {
+                res.send(`The account (${email}) has been deleted.`)
+            })
         })
     }
 })

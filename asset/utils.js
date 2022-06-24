@@ -1,6 +1,7 @@
-export function isValid (value) {
-    if (value !== null && value !== undefined) {
-        return true
-    }
-    return false
+export const isInvalid  = (value)  => {
+    return value === undefined || value === null
+}
+
+export const isValid = (value) => {
+    return !isInvalid(value)
 }

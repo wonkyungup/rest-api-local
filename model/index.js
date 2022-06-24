@@ -100,22 +100,15 @@ export class MariaDB {
         })
     }
 
-    deleteUserSync (email, password) {
+    deleteUserSync (id) {
         return new Promise(resolve => {
-            this._pool.query(`select * from ${STR_TABLE} where email=${JSON.stringify(email)} AND password=${JSON.stringify(password)}`, (err, rows) => {
+            this._pool.query(`delete from ${STR_TABLE} where id = ${id}`, (err) => {
                 if (err) {
-                    console.log(`findUserSync: ${err}`)
+                    console.log(`deleteUserSync: ${err}`)
                     return
                 }
 
-                this._pool.query(`delete from ${STR_TABLE} where id = ${rows[0].ID}`, (err) => {
-                    if (err) {
-                        console.log(`deleteUserSync: ${err}`)
-                        return
-                    }
-
-                    resolve()
-                })
+                resolve()
             })
         })
     }
